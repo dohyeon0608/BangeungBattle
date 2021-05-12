@@ -1,0 +1,10 @@
+name: BangeungBattle
+version: ${project.version}
+main: com.dohyeon.bangeung.bangeungbattle.BangeungBattle
+api-version: 1.16
+description: 반응속도 배틀
+commands:
+  bangeungbattle:
+    aliases: ["bb"]
+    description: 반응속도
+    usage: /bangeungbattle
