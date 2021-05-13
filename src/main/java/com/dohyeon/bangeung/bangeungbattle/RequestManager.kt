@@ -6,17 +6,22 @@ import net.md_5.bungee.api.chat.TextComponent
 import net.md_5.bungee.api.chat.hover.content.Text
 import org.bukkit.ChatColor
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
 import java.util.*
 
-class RequestManager {
+class RequestManager: Listener {
 
     var requsetInfo: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf()
     //0번: 요청을 수락/거절을 했는가의 여부 (자동 거부) 1번: 플레이어가 요청 받은 사람들 목록
     private lateinit var plugin: BangeungBattle
+    private lateinit var inGame: InGame
 
     fun setPlugin(main: BangeungBattle){
         plugin = main
-        println("RequestManager, $plugin 으로 초기화되었습니다.")
+        inGame = InGame()
+        inGame.setPlugin(main)
     }
 
     fun resetRequestInfo(p: Player){
@@ -24,6 +29,7 @@ class RequestManager {
         requsetInfo[p.uniqueId]!!["requestToPlayer"] = false
         requsetInfo[p.uniqueId]!!["requestFromPlayers"] = mutableListOf<UUID>()
         requsetInfo[p.uniqueId]!!["clickedButton"] = false
+        requsetInfo[p.uniqueId]!!["inGame"] = false
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -32,6 +38,10 @@ class RequestManager {
 
             if (thatp == null) {
                 sendp.sendMessage("${ChatColor.RED}해당 플레이어는 존재하지 않거나 오프라인 상태입니다.")
+                return
+            }
+            if (requsetInfo[thatp.uniqueId]!!["inGame"] == true) {
+                sendp.sendMessage("${ChatColor.RED}해당 플레이어는 이미 게임을 진행하고 있습니다.")
                 return
             }
             if ((requsetInfo[thatp.uniqueId]!!["requestFromPlayers"] as MutableList<UUID>).contains(sendp.uniqueId)){
@@ -75,6 +85,11 @@ class RequestManager {
             }
             requsetInfo[thatp.uniqueId]!!["clickedButton"] = true
             (requsetInfo[thatp.uniqueId]!!["requestFromPlayers"] as MutableList<UUID>).remove(sendp.uniqueId)
+
+            requsetInfo[sendp.uniqueId]!!["inGame"] = true
+            requsetInfo[thatp.uniqueId]!!["inGame"] = true
+
+            inGame.testInventory(sendp, thatp)
 
             sendp.sendMessage("${thatp.name}님이 요청을 수락했습니다.")
             thatp.sendMessage("${sendp.name}님의 요청을 수락했습니다.")
@@ -121,6 +136,7 @@ class RequestManager {
         requsetInfo[p.uniqueId]!!["requestToPlayer"] = false
         requsetInfo[p.uniqueId]!!["clickedButton"] = false
         (requsetInfo[p.uniqueId]!!["requestFromPlayers"] as MutableList<*>).clear()
+        requsetInfo[p.uniqueId]!!["inGame"] = false
     }
 
     private fun autoDeny(sendp: Player, thatp: Player){
@@ -142,5 +158,10 @@ class RequestManager {
                 }
             },
             0L, 20L)
+    }
+
+    @EventHandler
+    fun onJoinEvent(e: PlayerJoinEvent){
+        resetRequestInfo(e.player)
     }
 }

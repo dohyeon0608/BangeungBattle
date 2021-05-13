@@ -11,21 +11,20 @@ import org.bukkit.inventory.meta.SkullMeta
 
 class InGame {
 
-    private var gameInfo: MutableMap<Int, MutableMap<String, Any>> = mutableMapOf()
+    var gameInfo: MutableMap<Int, MutableMap<String, Any>> = mutableMapOf()
     private var gameCount = 0
 
     private lateinit var plugin: BangeungBattle
 
     fun setPlugin(main: BangeungBattle){
         plugin = main
-        println("InGame, $plugin 으로 초기화되었습니다.")
     }
 
     fun toComponent(s: String): Component{
         return Component.text(s)
     }
 
-    fun testInventory(p: Player){
+    fun testInventory(p1: Player, p2: Player){
         val inv = plugin.server.createInventory(null, 45, toComponent("${ChatColor.BOLD}반응속도 배틀"))
 
         /* 빈칸 유리판 */
@@ -49,14 +48,14 @@ class InGame {
         //플레이어 머리
         val p1Head = ItemStack(Material.PLAYER_HEAD)
         val p1HeadMeta = p1Head.itemMeta as SkullMeta
-        p1HeadMeta.owningPlayer = p
-        p1HeadMeta.displayName(toComponent("${ChatColor.GOLD}1P: ${ChatColor.WHITE}${p.name}"))
+        p1HeadMeta.owningPlayer = p1
+        p1HeadMeta.displayName(toComponent("${ChatColor.GOLD}1P: ${ChatColor.WHITE}${p1.name}"))
         p1Head.itemMeta = p1HeadMeta
 
         val p2Head = ItemStack(Material.PLAYER_HEAD)
         val p2HeadMeta = p2Head.itemMeta as SkullMeta
-        p2HeadMeta.owningPlayer = p
-        p2HeadMeta.displayName(toComponent("${ChatColor.GOLD}2P: ${ChatColor.WHITE}${p.name}"))
+        p2HeadMeta.owningPlayer = p2
+        p2HeadMeta.displayName(toComponent("${ChatColor.GOLD}2P: ${ChatColor.WHITE}${p2.name}"))
         p2Head.itemMeta = p2HeadMeta
 
         inv.setItem(38, p1Head)
@@ -79,7 +78,8 @@ class InGame {
         clockinfometa.displayName(toComponent("준비중..."))
         inv.setItem(22, ItemStack(Material.CLOCK))
 
-        p.openInventory(inv)
+        p1.openInventory(inv)
+        p2.openInventory(inv)
     }
 
     fun setInventory(p1: Player, p2: Player): Inventory {
@@ -146,6 +146,7 @@ class InGame {
     private fun InGame(){
         val stopCode = plugin.server.scheduler.scheduleSyncRepeatingTask(plugin, {
             for(game in gameInfo.keys){
+                //update soon
             }
         },0L,1L)
     }

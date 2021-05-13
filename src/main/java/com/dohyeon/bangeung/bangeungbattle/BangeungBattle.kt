@@ -4,9 +4,7 @@ import org.bukkit.ChatColor
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.annotations.NotNull
 
@@ -17,15 +15,14 @@ class BangeungBattle : JavaPlugin(), @NotNull Listener {
 
     override fun onEnable() {
         logger.info("${ChatColor.BLUE}반응 속도 배틀 ON")
-        server.pluginManager.registerEvents(this, this)
 
         requestManager = RequestManager()
         requestManager.setPlugin(this)
-        println("requestManager의 값 = $requestManager")
 
         inGame = InGame()
         inGame.setPlugin(this)
-        println("inGame의 값 = $inGame")
+
+        server.pluginManager.registerEvents(requestManager, this)
 
         //reload 오류 방지
         server.onlinePlayers.forEach {
@@ -48,8 +45,7 @@ class BangeungBattle : JavaPlugin(), @NotNull Listener {
                     "accept" -> requestManager.accept(sender, server.getPlayer(args[1]))
                     "deny" -> requestManager.deny(sender, server.getPlayer(args[1]))
                     "cancel" -> requestManager.cancle(sender)
-                    "debug" -> sender.sendMessage("${requestManager.requsetInfo}")
-                    "testinv" -> inGame.testInventory(sender)
+                    "debug" -> sender.sendMessage("${requestManager.requsetInfo}\n${inGame.gameInfo}")
                 }
             }
         }
@@ -74,12 +70,5 @@ class BangeungBattle : JavaPlugin(), @NotNull Listener {
             }
         }
         return null
-    }
-
-    @EventHandler
-    fun onJoinEvent(e: PlayerJoinEvent){
-        requestManager.resetRequestInfo(e.player)
-        e.player.sendMessage("당신은 들어왔습니다.")
-        e.player.sendMessage("${requestManager.requsetInfo}")
     }
 }
