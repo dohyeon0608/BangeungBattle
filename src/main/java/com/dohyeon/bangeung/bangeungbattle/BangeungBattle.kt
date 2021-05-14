@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull
 class BangeungBattle : JavaPlugin(), @NotNull Listener {
 
     private lateinit var requestManager: RequestManager
-    private lateinit var inGame: InGame
 
     override fun onEnable() {
         logger.info("${ChatColor.BLUE}반응 속도 배틀 ON")
@@ -19,10 +18,8 @@ class BangeungBattle : JavaPlugin(), @NotNull Listener {
         requestManager = RequestManager()
         requestManager.setPlugin(this)
 
-        inGame = InGame()
-        inGame.setPlugin(this)
-
         server.pluginManager.registerEvents(requestManager, this)
+        server.pluginManager.registerEvents(requestManager.inGame, this)
 
         //reload 오류 방지
         server.onlinePlayers.forEach {
@@ -42,10 +39,10 @@ class BangeungBattle : JavaPlugin(), @NotNull Listener {
             else{
                 when(args[0]){
                     "request" -> requestManager.battleRequset(sender, server.getPlayer(args[1]))
-                    "accept" -> requestManager.accept(sender, server.getPlayer(args[1]))
-                    "deny" -> requestManager.deny(sender, server.getPlayer(args[1]))
+                    "accept" -> requestManager.accept(server.getPlayer(args[1]), sender)
+                    "deny" -> requestManager.deny(server.getPlayer(args[1]), sender)
                     "cancel" -> requestManager.cancle(sender)
-                    "debug" -> sender.sendMessage("${requestManager.requsetInfo}\n${inGame.gameInfo}")
+                    "debug" -> sender.sendMessage("디버깅:\n\n${requestManager.requsetInfo}\n\n${requestManager.inGame.gameInfo}\n\n${requestManager.inGame.playerInfo}\ngameInfo 길이 = ${requestManager.inGame.gameInfo.size}\nplayerInfo 길이 = ${requestManager.inGame.gameInfo.size}")
                 }
             }
         }
@@ -58,16 +55,20 @@ class BangeungBattle : JavaPlugin(), @NotNull Listener {
         alias: String,
         args: Array<out String>
     ): MutableList<String>? {
-        if(cmd.name == "bangeungbattle" || cmd.name == alias){
-            if(args.size == 1){
-                return mutableListOf("request","accept","deny","cancel","debug","testinv")
-            } else if (args.size == 2){
-                val onlinePlayers: MutableList<String> = mutableListOf()
-                server.onlinePlayers.forEach {
-                    onlinePlayers.add(it.name)
+        try {
+            if (cmd.name == "bangeungbattle" || cmd.name == alias) {
+                if (args.size == 1) {
+                    return mutableListOf("request", "accept", "deny")
+                } else if (args.size == 2) {
+                    val onlinePlayers: MutableList<String> = mutableListOf()
+                    server.onlinePlayers.forEach {
+                        onlinePlayers.add(it.name)
+                    }
+                    return onlinePlayers
                 }
-                return onlinePlayers
             }
+        } catch(e: Exception){
+            sender.sendMessage("오류 발생! $e")
         }
         return null
     }

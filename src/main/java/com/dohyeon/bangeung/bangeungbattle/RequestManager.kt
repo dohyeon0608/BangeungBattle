@@ -15,8 +15,9 @@ class RequestManager: Listener {
 
     var requsetInfo: MutableMap<UUID, MutableMap<String, Any>> = mutableMapOf()
     //0번: 요청을 수락/거절을 했는가의 여부 (자동 거부) 1번: 플레이어가 요청 받은 사람들 목록
+
     private lateinit var plugin: BangeungBattle
-    private lateinit var inGame: InGame
+    lateinit var inGame: InGame
 
     fun setPlugin(main: BangeungBattle){
         plugin = main
@@ -35,7 +36,6 @@ class RequestManager: Listener {
     @Suppress("UNCHECKED_CAST")
     fun battleRequset(sendp: Player, thatp: Player?){
         try {
-
             if (thatp == null) {
                 sendp.sendMessage("${ChatColor.RED}해당 플레이어는 존재하지 않거나 오프라인 상태입니다.")
                 return
@@ -72,54 +72,54 @@ class RequestManager: Listener {
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun accept(sendp: Player, thatp: Player?){
-
+    fun accept(sendp: Player?, thatp: Player){
         try {
-            if (thatp == null) {
-                sendp.sendMessage("${ChatColor.RED}해당 플레이어는 존재하지 않거나 오프라인 상태입니다.")
+            if (sendp == null) {
+                thatp.sendMessage("${ChatColor.RED}해당 플레이어는 존재하지 않거나 오프라인 상태입니다.")
                 return
             }
             if (!((requsetInfo[thatp.uniqueId]!!["requestFromPlayers"] as MutableList<UUID>).contains(sendp.uniqueId))) {
-                sendp.sendMessage("${ChatColor.RED}당신은 해당 플레이어에게 요청을 받은 적이 없습니다!")
+                thatp.sendMessage("${ChatColor.RED}당신은 해당 플레이어에게 요청을 받은 적이 없습니다!")
                 return
             }
+
             requsetInfo[thatp.uniqueId]!!["clickedButton"] = true
             (requsetInfo[thatp.uniqueId]!!["requestFromPlayers"] as MutableList<UUID>).remove(sendp.uniqueId)
 
             requsetInfo[sendp.uniqueId]!!["inGame"] = true
             requsetInfo[thatp.uniqueId]!!["inGame"] = true
 
-            inGame.testInventory(sendp, thatp)
+            inGame.createGame(sendp, thatp)
 
-            sendp.sendMessage("${thatp.name}님이 요청을 수락했습니다.")
-            thatp.sendMessage("${sendp.name}님의 요청을 수락했습니다.")
+            sendp.sendMessage("${ChatColor.AQUA}${thatp.name}님이 요청을 수락했습니다.")
+            thatp.sendMessage("${ChatColor.AQUA}${sendp.name}님의 요청을 수락했습니다.")
 
         } catch(e: Exception){
-            sendp.sendMessage("오류 발생: $e")
+            thatp.sendMessage("오류 발생: $e")
         }
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun deny(sendp: Player, thatp: Player?){
+    fun deny(sendp: Player?, thatp: Player){
 
         try {
-            if (thatp == null) {
-                sendp.sendMessage("${ChatColor.RED}해당 플레이어는 존재하지 않거나 오프라인 상태입니다.")
+            if (sendp == null) {
+                thatp.sendMessage("${ChatColor.RED}해당 플레이어는 존재하지 않거나 오프라인 상태입니다.")
                 return
             }
             if (!((requsetInfo[thatp.uniqueId]!!["requestFromPlayers"] as MutableList<UUID>).contains(sendp.uniqueId))) {
-                sendp.sendMessage("${ChatColor.RED}당신은 해당 플레이어에게 요청을 받은 적이 없습니다!")
+                thatp.sendMessage("${ChatColor.RED}당신은 해당 플레이어에게 요청을 받은 적이 없습니다!")
                 return
             }
 
             requsetInfo[thatp.uniqueId]!!["clickedButton"] = true
             (requsetInfo[thatp.uniqueId]!!["requestFromPlayers"] as MutableList<UUID>).remove(sendp.uniqueId)
 
-            sendp.sendMessage("${thatp.name}님이 요청을 거부했습니다.")
-            thatp.sendMessage("${sendp.name}님의 요청을 거부했습니다.")
+            sendp.sendMessage("${ChatColor.AQUA}${thatp.name}님이 요청을 거부했습니다.")
+            thatp.sendMessage("${ChatColor.AQUA}${sendp.name}님의 요청을 거부했습니다.")
 
         } catch(e: Exception){
-            sendp.sendMessage("오류 발생: $e")
+            thatp.sendMessage("오류 발생: $e")
         }
     }
 
@@ -127,12 +127,16 @@ class RequestManager: Listener {
         if(thatp == null){
             return
         }
-        sendp.sendMessage("${thatp.name}님에게 간 요청이 만료되었습니다.")
-        thatp.sendMessage("${sendp.name}님의 요청이 만료되었습니다.")
+        sendp.sendMessage("${ChatColor.AQUA}${thatp.name}님에게 간 요청이 만료되었습니다.")
+        thatp.sendMessage("${ChatColor.AQUA}${sendp.name}님의 요청이 만료되었습니다.")
         (requsetInfo[thatp.uniqueId]?.get("requestFromPlayers") as MutableList<*>).remove(sendp.uniqueId)
     }
 
     fun cancle(p: Player){
+        if(requsetInfo[p.uniqueId]!!["inGame"] == false){
+            p.sendMessage("${ChatColor.RED}올바르지 않은 접근 방식입니다.")
+            return
+        }
         requsetInfo[p.uniqueId]!!["requestToPlayer"] = false
         requsetInfo[p.uniqueId]!!["clickedButton"] = false
         (requsetInfo[p.uniqueId]!!["requestFromPlayers"] as MutableList<*>).clear()
@@ -155,6 +159,7 @@ class RequestManager: Listener {
                 else{
                     requsetInfo[thatp.uniqueId]!!["clickedButton"] = false
                     timeOverDeny(sendp, thatp)
+                    plugin.server.scheduler.cancelTask(stopCode)
                 }
             },
             0L, 20L)
